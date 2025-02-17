@@ -1,6 +1,6 @@
 export const ProviderEnum = {
     GOOGLE: "GOOGLE",
-    GITHUB: "GITHUB",
+    // GITHUB: "GITHUB",
     EMAIL: "EMAIL",
   };
   
