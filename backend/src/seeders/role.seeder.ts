@@ -5,48 +5,48 @@ import RoleModel from "../models/roles-permission.model";
 import { RolePermissions } from "../utils/role-permission";
 
 const seedRoles = async () => {
+  // Initialize seeding process
   console.log("Seeding roles started...");
 
   try {
+    // Connect to database
     await connectDatabase();
 
+    // Start transaction session
     const session = await mongoose.startSession();
     session.startTransaction();
 
-    console.log("Clearing existing roles...");
+    // Clear existing roles for fresh seed
     await RoleModel.deleteMany({}, { session });
+    console.log("Existing roles cleared");
 
-    for (const roleName in RolePermissions) {
-      const role = roleName as keyof typeof RolePermissions;
-      const permissions = RolePermissions[role];
+    // Iterate through role permissions and create/update roles
+    const rolePromises = Object.entries(RolePermissions).map(
+      async ([roleName, permissions]) => {
+        const existingRole = await RoleModel.findOne({ name: roleName }).session(
+          session
+        );
 
-      const existingRole = await RoleModel.findOne({ name: role }).session(
-        session
-      );
-      if (!existingRole) {
-        const newRole = new RoleModel({
-          name: role,
-          permissions: permissions,
-        });
-        await newRole.save({ session });
-        console.log(`Role ${role} added with permissions.`);
-      } else {
-        console.log(`Role ${role} already exists.`);
+        if (!existingRole) {
+          // Create new role if it doesn't exist
+          await new RoleModel({ name: roleName, permissions }).save({ session });
+          console.log(`Role ${roleName} added with permissions`);
+        }
       }
-    }
+    );
 
+    // Wait for all role operations to complete
+    await Promise.all(rolePromises);
     await session.commitTransaction();
-    console.log("Transaction committed.");
-
+    
+    // Cleanup
     session.endSession();
-    console.log("Session ended.");
-
-    console.log("Seeding completed successfully.");
+    console.log("Seeding completed successfully");
   } catch (error) {
-    console.error("Error during seeding:", error);
+    // Handle any errors during the process
+    console.error("Seeding error:", error);
   }
 };
 
-seedRoles().catch((error) =>
-  console.error("Error running seed script:", error)
-);
+// Execute seeding function
+seedRoles().catch((error) => console.error("Seed execution error:", error));

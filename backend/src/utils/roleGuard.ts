@@ -2,17 +2,16 @@ import { PermissionType, Permissions } from "../enums/role.enum";
 import { UnauthorizedException } from "./appError";
 import { RolePermissions } from "./role-permission";
 
+/**
+ * Validates if a role has all required permissions, throws if unauthorized
+ */
 export const roleGuard = (
   role: keyof typeof RolePermissions,
   requiredPermissions: PermissionType[]
-) => {
-  const permissions = RolePermissions[role];
+): void => {
+  const rolePerms = RolePermissions[role];
 
-  const hasPermission = requiredPermissions.every((permission) =>
-    permissions.includes(permission)
-  );
-
-  if (!hasPermission) {
+  if (!requiredPermissions.every((perm) => rolePerms.includes(perm))) {
     throw new UnauthorizedException(
       "You do not have the necessary permissions to perform this action"
     );

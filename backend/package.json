@@ -1,13 +1,15 @@
 {
   "name": "reemo-backend",
   "version": "1.0.0",
+  "description": "CRUD Endpoints and Authentication for Reemo",
   "main": "index.js",
   "scripts": {
+    "seed": "ts-node src/seeders/role.seeder.ts",
     "dev": "ts-node-dev --files src/index.ts",
     "build": "tsc && cp /package.json ./dist",
-    "start": "node dist/index.js",
-    "seed": "ts-node src/seeders/role.seeder.ts"
+    "start": "node dist/index.js"
   },
+  "keywords": [],
   "author": "nayiswftw",
   "license": "ISC",
   "dependencies": {
@@ -18,7 +20,6 @@
     "express": "^4.21.2",
     "mongoose": "^8.9.2",
     "passport": "^0.5.3",
-    "passport-github2": "^0.1.12",
     "passport-google-oauth20": "^2.0.0",
     "passport-local": "^1.0.0",
     "uuid": "^11.0.3",

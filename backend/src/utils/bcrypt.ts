@@ -1,3 +1,4 @@
+// simple function to encrypt pass and compare values
 import bcrypt from "bcrypt";
 
 export const hashValue = async (value: string, saltRounds: number = 10) =>

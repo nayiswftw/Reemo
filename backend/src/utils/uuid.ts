@@ -1,9 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 
-export function generateInviteCode() {
-    return uuidv4().replace(/-/g, "").substring(0, 8);
-}
+// Generates an 8-character unique invite code by removing hyphens from UUID
+export const generateInviteCode = () => uuidv4().replace(/-/g, "").slice(0, 8);
 
-export function generateTaskCode() {
-    return `task-${uuidv4().replace(/-/g, "").substring(0, 3)}`;
-}
+// Creates a task code with 'task-' prefix followed by 3 unique characters
+export const generateTaskCode = () => `task-${uuidv4().replace(/-/g, "").slice(0, 3)}`;

@@ -4,6 +4,7 @@ import ProjectModel from "../models/project.model";
 import TaskModel from "../models/task.model";
 import { BadRequestException, NotFoundException } from "../utils/appError";
 
+// Creates a new task in a workspace project
 export const createTaskService = async (
   workspaceId: string,
   projectId: string,
@@ -19,24 +20,28 @@ export const createTaskService = async (
 ) => {
   const { title, description, priority, status, assignedTo, dueDate } = body;
 
-  const project = await ProjectModel.findById(projectId);
-
-  if (!project || project.workspace.toString() !== workspaceId.toString()) {
-    throw new NotFoundException(
-      "Project not found or does not belong to this workspace"
-    );
+  // Verify project exists and belongs to workspace
+  const project = await ProjectModel.findOne({ 
+    _id: projectId, 
+    workspace: workspaceId 
+  });
+  if (!project) {
+    throw new NotFoundException("Project not found or does not belong to this workspace");
   }
+
+  // Verify assigned user is workspace member
   if (assignedTo) {
     const isAssignedUserMember = await MemberModel.exists({
       userId: assignedTo,
       workspaceId,
     });
-
     if (!isAssignedUserMember) {
-      throw new Error("Assigned user is not a member of this workspace.");
+      throw new BadRequestException("Assigned user is not a member of this workspace");
     }
   }
-  const task = new TaskModel({
+
+  // Create and save new task
+  const task = await TaskModel.create({
     title,
     description,
     priority: priority || TaskPriorityEnum.MEDIUM,
@@ -48,11 +53,10 @@ export const createTaskService = async (
     dueDate,
   });
 
-  await task.save();
-
   return { task };
 };
 
+// Updates an existing task
 export const updateTaskService = async (
   workspaceId: string,
   projectId: string,
@@ -66,27 +70,23 @@ export const updateTaskService = async (
     dueDate?: string;
   }
 ) => {
-  const project = await ProjectModel.findById(projectId);
+  // Verify project and task exist and belong to workspace
+  const [project, task] = await Promise.all([
+    ProjectModel.findOne({ _id: projectId, workspace: workspaceId }),
+    TaskModel.findOne({ _id: taskId, project: projectId })
+  ]);
 
-  if (!project || project.workspace.toString() !== workspaceId.toString()) {
-    throw new NotFoundException(
-      "Project not found or does not belong to this workspace"
-    );
+  if (!project) {
+    throw new NotFoundException("Project not found or does not belong to this workspace");
+  }
+  if (!task) {
+    throw new NotFoundException("Task not found or does not belong to this project");
   }
 
-  const task = await TaskModel.findById(taskId);
-
-  if (!task || task.project.toString() !== projectId.toString()) {
-    throw new NotFoundException(
-      "Task not found or does not belong to this project"
-    );
-  }
-
+  // Update task with new data
   const updatedTask = await TaskModel.findByIdAndUpdate(
     taskId,
-    {
-      ...body,
-    },
+    body,
     { new: true }
   );
 
@@ -97,6 +97,7 @@ export const updateTaskService = async (
   return { updatedTask };
 };
 
+// Retrieves filtered tasks with pagination
 export const getAllTasksService = async (
   workspaceId: string,
   filters: {
@@ -112,40 +113,19 @@ export const getAllTasksService = async (
     pageNumber: number;
   }
 ) => {
-  const query: Record<string, any> = {
-    workspace: workspaceId,
-  };
+  // Build query based on filters
+  const query: Record<string, any> = { workspace: workspaceId };
+  if (filters.projectId) query.project = filters.projectId;
+  if (filters.status?.length) query.status = { $in: filters.status };
+  if (filters.priority?.length) query.priority = { $in: filters.priority };
+  if (filters.assignedTo?.length) query.assignedTo = { $in: filters.assignedTo };
+  if (filters.keyword) query.title = { $regex: filters.keyword, $options: "i" };
+  if (filters.dueDate) query.dueDate = { $eq: new Date(filters.dueDate) };
 
-  if (filters.projectId) {
-    query.project = filters.projectId;
-  }
-
-  if (filters.status && filters.status?.length > 0) {
-    query.status = { $in: filters.status };
-  }
-
-  if (filters.priority && filters.priority?.length > 0) {
-    query.priority = { $in: filters.priority };
-  }
-
-  if (filters.assignedTo && filters.assignedTo?.length > 0) {
-    query.assignedTo = { $in: filters.assignedTo };
-  }
-
-  if (filters.keyword && filters.keyword !== undefined) {
-    query.title = { $regex: filters.keyword, $options: "i" };
-  }
-
-  if (filters.dueDate) {
-    query.dueDate = {
-      $eq: new Date(filters.dueDate),
-    };
-  }
-
-  //Pagination Setup
   const { pageSize, pageNumber } = pagination;
   const skip = (pageNumber - 1) * pageSize;
 
+  // Execute query with pagination
   const [tasks, totalCount] = await Promise.all([
     TaskModel.find(query)
       .skip(skip)
@@ -156,33 +136,24 @@ export const getAllTasksService = async (
     TaskModel.countDocuments(query),
   ]);
 
-  const totalPages = Math.ceil(totalCount / pageSize);
-
   return {
     tasks,
     pagination: {
       pageSize,
       pageNumber,
       totalCount,
-      totalPages,
+      totalPages: Math.ceil(totalCount / pageSize),
       skip,
     },
   };
 };
 
+// Retrieves a specific task by ID
 export const getTaskByIdService = async (
   workspaceId: string,
   projectId: string,
   taskId: string
 ) => {
-  const project = await ProjectModel.findById(projectId);
-
-  if (!project || project.workspace.toString() !== workspaceId.toString()) {
-    throw new NotFoundException(
-      "Project not found or does not belong to this workspace"
-    );
-  }
-
   const task = await TaskModel.findOne({
     _id: taskId,
     workspace: workspaceId,
@@ -190,12 +161,13 @@ export const getTaskByIdService = async (
   }).populate("assignedTo", "_id name profilePicture -password");
 
   if (!task) {
-    throw new NotFoundException("Task not found.");
+    throw new NotFoundException("Task not found");
   }
 
   return task;
 };
 
+// Deletes a task from workspace
 export const deleteTaskService = async (
   workspaceId: string,
   taskId: string
@@ -206,10 +178,6 @@ export const deleteTaskService = async (
   });
 
   if (!task) {
-    throw new NotFoundException(
-      "Task not found or does not belong to the specified workspace"
-    );
+    throw new NotFoundException("Task not found or does not belong to the workspace");
   }
-
-  return;
 };
