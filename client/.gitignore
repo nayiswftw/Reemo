@@ -11,8 +11,8 @@ node_modules
 dist
 dist-ssr
 *.local
-.env 
-bun.lock 
+.env
+bun.lock
 
 # Editor directories and files
 .vscode/*
@@ -24,4 +24,3 @@ bun.lock
 *.njsproj
 *.sln
 *.sw?
-

@@ -1,26 +1,40 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useAuthContext } from "@/context/auth-provider";
 import { Loader } from "lucide-react";
 
 const WorkspaceHeader = () => {
-  const isLoading = false;
+  const { workspaceLoading, workspace } = useAuthContext();
   return (
-    <div className="w-full max-w-3xl mx-auto pb-2">
-      {isLoading ? (
-        <Loader className="w-8 h-8 animate-spin" />
-      ) : (
-        <div className="flex items-center gap-4">
-          <Avatar className="size-[60px] rounded-lg font-bold ">
-            <AvatarFallback className="rounded-lg bg-gradient-to-tl text-[35px]  to-black from-black text-white">
-              W
-            </AvatarFallback>
-          </Avatar>
-          <div className="grid flex-1 text-left leading-tight">
-            <span className="truncate font-semibold text-xl">Test Co</span>
-            <span className="truncate text-sm">Free</span>
+    <header className="w-full px-4 sm:px-6 lg:px-8 py-4">
+      <div className="max-w-3xl mx-auto">
+        {workspaceLoading ? (
+          <div className="flex justify-center items-center h-16">
+            <Loader className="w-6 h-6 animate-spin text-gray-600" />
           </div>
-        </div>
-      )}
-    </div>
+        ) : (
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Avatar className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-lg shadow-sm">
+              <AvatarFallback 
+                className="rounded-lg bg-gradient-to-br from-gray-900 to-gray-800 text-white font-semibold"
+                style={{ fontSize: 'calc(1rem + 1vw)' }}
+              >
+                {workspace?.name?.split(" ")?.[0]?.charAt(0) || "W"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">
+                {workspace?.name}
+              </h1>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                  Free Plan
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </header>
   );
 };
 

@@ -11,12 +11,15 @@ const TableSkeleton: React.FC<TableSkeletonProps> = ({
   rows = 20,
 }) => {
   return (
-    <div className="w-full bg-white rounded-lg">
+    <div className="w-full bg-white rounded-lg shadow-sm overflow-x-auto">
       {/* Table Header Skeleton */}
-      <div className="flex h-10 bg-gray-50 rounded-t-lg">
+      <div className="flex min-w-full h-12 bg-gray-50 rounded-t-lg sticky top-0 z-10">
         {[...Array(columns)].map((_, index) => (
-          <div key={`header-col-${index}`} className={`flex-1 px-4 py-2`}>
-            <Skeleton className="h-4 w-full rounded-lg" />
+          <div
+            key={`header-col-${index}`}
+            className={`flex-1 min-w-[150px] px-4 py-3`}
+          >
+            <Skeleton className="h-5 w-[80%] rounded-md" />
           </div>
         ))}
       </div>
@@ -24,13 +27,18 @@ const TableSkeleton: React.FC<TableSkeletonProps> = ({
       {/* Table Body Skeleton */}
       <div className="divide-y divide-gray-100">
         {[...Array(rows)].map((_, rowIndex) => (
-          <div key={`row-${rowIndex}`} className="flex h-10">
+          <div
+            key={`row-${rowIndex}`}
+            className="flex min-w-full hover:bg-gray-50 transition-colors"
+          >
             {[...Array(columns)].map((_, colIndex) => (
               <div
                 key={`row-${rowIndex}-col-${colIndex}`}
-                className={`flex-1 px-4 py-2`}
+                className={`flex-1 min-w-[150px] px-4 py-3`}
               >
-                <Skeleton className="h-4 w-full rounded-lg" />
+                <Skeleton 
+                  className={`h-4 w-${colIndex === 0 ? '[70%]' : '[60%]'} rounded-md`} 
+                />
               </div>
             ))}
           </div>
