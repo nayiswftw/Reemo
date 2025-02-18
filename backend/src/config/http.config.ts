@@ -20,7 +20,7 @@ const httpConfig = () => ({
   BAD_GATEWAY: 502,
   SERVICE_UNAVAILABLE: 503,
   GATEWAY_TIMEOUT: 504,
-});
+})
 
 export const HTTPSTATUS = httpConfig();
 
