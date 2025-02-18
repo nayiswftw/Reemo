@@ -2,15 +2,20 @@ import passport from "passport";
 import { Request } from "express";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as LocalStrategy } from "passport-local";
-// import { Strategy as GitHubStrategy } from "passport-github2";
-
+import {
+    Strategy as JwtStrategy,
+    ExtractJwt,
+    StrategyOptions,
+} from "passport-jwt";
 import { config } from "./app.config";
 import { NotFoundException } from "../utils/appError";
 import { ProviderEnum } from "../enums/account-provider.enum";
 import {
+    findUserByIdService,
     loginOrCreateAccountService,
     verifyUserService,
 } from "../services/auth.service";
+import { signJwtToken } from "../utils/jwt";
 
 passport.use(
     new GoogleStrategy(
@@ -37,6 +42,9 @@ passport.use(
                     picture: picture,
                     email: email,
                 });
+                const jwt = signJwtToken({ userId: user._id });
+                req.jwt = jwt;
+
                 done(null, user);
             } catch (error) {
                 done(error, false);
@@ -45,46 +53,13 @@ passport.use(
     )
 );
 
-// TODO: Implement Github Strategy [Will be implemented in the future] 
-// passport.use(
-//     new GitHubStrategy(
-//         {
-//             clientID: config.GITHUB_CLIENT_ID,
-//             clientSecret: config.GITHUB_CLIENT_SECRET,
-//             callbackURL: config.GITHUB_CALLBACK_URL,
-//             scope: ["profile", "email"],
-//             passReqToCallback: true,
-//         },
-//         async (req: Request, accessToken, refreshToken, profile, done) => {
-//             try {
-//                 const { id: githubId, _json } = profile;
-//                 const { email, avatar_url: picture } = _json;
-
-//                 if (!githubId) {
-//                     throw new NotFoundException("Github ID is missing");
-//                 }
-
-//                 const { user } = await loginOrCreateAccountService({
-//                     provider: ProviderEnum.GITHUB,
-//                     displayName: profile.displayName,
-//                     providerId: String(githubId),
-//                     picture: picture,
-//                     email: email,
-//                 });
-//                 done(null, user);
-//             } catch (error) {
-//                 done(error, false);
-//             }
-//         }
-//     )
-// );
 
 passport.use(
     new LocalStrategy(
         {
             usernameField: "email",
             passwordField: "password",
-            session: true,
+            session: false,
         },
         async (email, password, done) => {
             try {
@@ -97,5 +72,30 @@ passport.use(
     )
 );
 
+interface JwtPayload {
+    userId: string;
+}
+
+const options: StrategyOptions = {
+    jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+    secretOrKey: config.JWT_SECRET,
+    audience: "user",
+    algorithms: ["HS256"],
+};
+
+passport.use(
+    new JwtStrategy(options, async (payload: JwtPayload, done) => {
+        try {
+            const user = await findUserByIdService(payload.userId);
+            if (!user) { return done(null, false); }
+            return done(null, user);
+        } catch (error) {
+            return done(error, false);
+        }
+    })
+);
+
 passport.serializeUser((user: any, done) => done(null, user));
 passport.deserializeUser((user: any, done) => done(null, user));
+
+export const passportAuthenticateJWT = passport.authenticate("jwt", {session: false});   

@@ -19,6 +19,7 @@ import workspaceRoutes from "./routes/workspace.route";
 import memberRoutes from "./routes/member.route";
 import projectRoutes from "./routes/project.route";
 import taskRoutes from "./routes/task.route";
+import { passportAuthenticateJWT } from "./config/passport.config";
 
 
 const app = express();
@@ -52,10 +53,6 @@ app.use(
 app.get(
   `/`,
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    throw new BadRequestException(
-      "Invalid token",
-      ErrorCodeEnum.AUTH_INVALID_TOKEN
-    );
     return res.status(HTTPSTATUS.OK).json({
       message: "Never gonna give you up",
     });
@@ -63,11 +60,11 @@ app.get(
 );
 
 app.use(`${BASE_PATH}/auth`, authRoutes);
-app.use(`${BASE_PATH}/user`, isAuthenticated, userRoutes);
-app.use(`${BASE_PATH}/workspace`, isAuthenticated, workspaceRoutes);
-app.use(`${BASE_PATH}/member`, isAuthenticated, memberRoutes);
-app.use(`${BASE_PATH}/project`, isAuthenticated, projectRoutes);
-app.use(`${BASE_PATH}/task`, isAuthenticated, taskRoutes);
+app.use(`${BASE_PATH}/user`, passportAuthenticateJWT, userRoutes);
+app.use(`${BASE_PATH}/workspace`, passportAuthenticateJWT, workspaceRoutes);
+app.use(`${BASE_PATH}/member`, passportAuthenticateJWT, memberRoutes);
+app.use(`${BASE_PATH}/project`, passportAuthenticateJWT, projectRoutes);
+app.use(`${BASE_PATH}/task`, passportAuthenticateJWT, taskRoutes);
 
 app.use(errorHandler);
 
