@@ -1,4 +1,5 @@
 # Reemo - B2B Team Project Management App
+![image](https://github.com/user-attachments/assets/9f8dbb40-e834-4a58-b3c4-2ca4fb8cc4cb)
 
 **Reemo** is a comprehensive B2B Team Project Management App designed to enhance collaboration and streamline project workflows within teams. This application offers a robust suite of features, including project creation, task management, user authentication, and workspace management, all within an intuitive and user-friendly interface.
 
